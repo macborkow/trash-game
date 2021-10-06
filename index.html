@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="https://pixijs.download/release/pixi.js"></script>
+  </head>
+  <body>
+    <style>
+      p {
+        position: absolute;
+        color: black;
+        display: block;
+        width: 100px;
+        height: 30px;
+        left: 590px;
+        top: 10px;
+        font-family: monospace;
+        font-size: 20px;
+      }
+      .lower {
+        top: 40px;
+        left: 550px;
+      }
+    </style>
+    <script>
+
+let app = new PIXI.Application({ width: 640, height: 360, backgroundColor: 0xf2d2a9});
+document.body.appendChild(app.view);
+
+let score = 0
+let lives = 3
+let gameOver = false
+
+let paragraph = document.createElement('P')
+let t = document.createTextNode('0')
+
+paragraph.appendChild(t)
+document.body.appendChild(paragraph)
+
+let livesParagraph = document.createElement('P')
+let livest = document.createTextNode(`Lives: ${lives}`)
+
+livesParagraph.appendChild(livest)
+livesParagraph.className='lower'
+document.body.appendChild(livesParagraph)
+
+let dmg = new PIXI.Graphics()
+dmg.beginFill(0xff0000)
+dmg.drawRect(0,0,640,360)
+dmg.endFill()
+dmg.alpha = 0
+app.stage.addChild(dmg)
+
+
+let updateScore = (points) => {
+  if(!gameOver) {
+    score+=points
+    paragraph.innerText = score
+    updateInterval()
+  }
+}
+let updateLives = () => {
+  if(!gameOver) {
+    lives--
+    livesParagraph.innerText = `Lives: ${lives}`
+    if(lives == 0) {
+      livesParagraph.innerText = `Defeat!`
+      gameOver = true
+      updateInterval()
+    }
+  }
+}
+
+let sprite = PIXI.Sprite.from('sample.png');
+sprite.anchor.set(0,1)
+app.stage.addChild(sprite);
+let movement = false
+let velocity = 0;
+let acc = 0;
+sprite.y = 330;
+let maxSpeed = 4;
+sprite.scale.set(1.5) 
+
+
+let trash = []
+let trashPictures = [
+  'trash.png',
+  'trash2.png',
+  'trash3.png'
+]
+
+const spawnTrash = () => {
+  let trashSprite = PIXI.Sprite.from(trashPictures[Math.floor(Math.random()*(trashPictures.length))]);
+  trashSprite.anchor.set(0.5)
+  trashSprite.y = -30;
+  trashSprite.x = Math.floor(Math.random()*600+20);
+  trashSprite.rotationSpeed = Math.random()*6-3
+  trash.push(trashSprite)
+  app.stage.addChild(trashSprite);
+}
+
+spawnTrash()
+let spawnInterval = setInterval(spawnTrash, 3000)
+let level = 0;
+
+let updateInterval = () => {
+  if(gameOver) {
+    clearInterval(spawnInterval)
+    setInterval(spawnTrash, 50)
+  }
+  else {
+    if(Math.floor(score/1000) > level){
+    level++
+    clearInterval(spawnInterval)
+    spawnInterval = setInterval(spawnTrash, 3000 - level*250)
+    }
+  }
+}
+
+
+document.body.addEventListener("keydown", function(e) {
+  if(e.key == 'a')
+    movement = 'left';
+  if(e.key == 'd')
+    movement = 'right'
+  if(gameOver)
+    movement = false;
+})
+document.body.addEventListener("keyup", function(e) {
+  if(e.key == 'a' && movement == 'left')
+    movement = false
+  if(e.key == 'd' && movement == 'right')
+    movement = false
+})
+
+
+let elapsed = 0.0;
+app.ticker.add((delta) => {
+  elapsed += delta;
+
+
+
+  trash = trash.filter(item => { 
+    item.y +=(delta/50.0) * 100
+    item.rotation +=(delta/50.0) *item.rotationSpeed;
+    if(item.x < sprite.x+sprite.width && item.x+item.width > sprite.x+30 &&
+      item.y+item.height > sprite.y && item.y < sprite.y+(sprite.height/8)) {
+      app.stage.removeChild(item)
+      item.destroy()
+      updateScore(100)
+      return false
+    }
+    if(item.y > 360) {
+      app.stage.removeChild(item)
+      item.destroy()
+      updateLives()
+      dmg.alpha = 1
+      return false
+    }
+
+    return true
+  })
+
+
+  if(gameOver)
+    dmg.alpha = 1
+  else if(dmg.alpha > 0)
+  {
+    dmg.alpha-=delta/50
+    if(dmg.alpha < 0)
+      dmg.alpha = 0
+  }
+
+
+  if(movement=='left')
+    acc = -5.0;
+  else if(movement=='right')
+    acc = 5.0
+  else
+    if(velocity<0)
+      acc = 2.0
+    else
+      acc = -2.0
+  if(Math.abs(velocity) < 0.1 && movement == false)
+    velocity = 0;
+  else {
+    if(Math.abs(velocity) <= maxSpeed)
+      velocity+=acc*(delta/50.0)
+    else
+      if(velocity<0)
+        velocity = -maxSpeed
+      else
+        velocity = maxSpeed
+  }
+
+  sprite.x+=velocity;
+});
+
+    </script>
+  </body>
+</html>
