@@ -24,7 +24,7 @@
     </style>
     <script>
 
-let app = new PIXI.Application({ width: 640, height: 360, backgroundColor: 0xf2d2a9});
+      let app = new PIXI.Application({ width: 640, height: 360, backgroundColor: 0x87ceeb});//0xf2d2a9});
 document.body.appendChild(app.view);
 
 let score = 0
@@ -46,7 +46,7 @@ document.body.appendChild(livesParagraph)
 
 
 let floor = new PIXI.Graphics()
-floor.beginFill(0xe1bf92)
+floor.beginFill(0xf2d2a9)//0xe1bf92)
 floor.drawRect(0,310,640,360)
 floor.endFill()
 app.stage.addChild(floor)
@@ -77,16 +77,21 @@ hearts.forEach( (item, index) => {
 let updateScore = (points) => {
   if(!gameOver) {
     score+=points
+    if(score%1000 == 0 && lives<3)
+      updateLives(1)
     paragraph.innerText = score
     updateInterval()
   }
 }
 
-let updateLives = () => {
+let updateLives = (offset) => {
   if(!gameOver) {
-    lives--
-    app.stage.removeChild(hearts[lives])
-    hearts[lives].destroy()
+    lives+=offset
+    if(offset<0)
+      app.stage.removeChild(hearts[lives])
+    else
+      app.stage.addChild(hearts[lives-1])
+    //hearts[lives].destroy()
     livesParagraph.innerText = ''//`Lives: ${lives}`
     if(lives == 0) {
       livesParagraph.innerText = `Defeat!`
@@ -131,6 +136,8 @@ const spawnTrash = () => {
 spawnTrash()
 let spawnInterval = setInterval(spawnTrash, 3000)
 let level = 0;
+
+let bumpSpeed = 0;
 
 let updateInterval = () => {
   if(gameOver) {
@@ -192,6 +199,9 @@ app.ticker.add((delta) => {
       dmg.beginFill(0xa9f2d2)
       dmg.drawRect(0,0,640,360)
       dmg.endFill()
+        if(score%1000==0)
+          dmg.alpha = 1
+        else
       dmg.alpha = 0.6
       }
       return false
@@ -203,7 +213,7 @@ app.ticker.add((delta) => {
         setTimeout( () => { isShaking = false }, 300)
       }
       item.destroy()
-      updateLives()
+      updateLives(-1)
       dmg.clear()
       dmg.beginFill(0xff0000)
       dmg.drawRect(0,0,640,360)
@@ -252,16 +262,26 @@ app.ticker.add((delta) => {
   }
   
     if(sprite.x+sprite.width/2-20 > 640 || sprite.x-sprite.width/2+20 < 0) {
+      isShaking = true
+      setTimeout( () => { isShaking = false }, 200)
       velocity = -velocity;
-      if(sprite.x+20-sprite.width/2<0)
+      if(sprite.x+20-sprite.width/2<0) {
+            bumpSpeed = 2
         sprite.x = -20+sprite.width/2
-      else
+            }
+            else {
+            bumpSpeed = -2
         sprite.x = 640 - sprite.width/2 + 20
-
+            }
     }
 
-  sprite.rotation=(0.4*-velocity/maxSpeed)
-  sprite.x+=velocity;
+  if(bumpSpeed>0)
+    bumpSpeed-=1*delta/50
+  else if(bumpSpeed<0)
+    bumpSpeed+=1*delta/50
+
+  sprite.rotation=(0.4*-velocity/maxSpeed+0.05*-bumpSpeed/2)
+  sprite.x+=velocity+bumpSpeed;
 });
 
     </script>
