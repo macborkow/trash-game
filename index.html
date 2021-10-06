@@ -98,7 +98,6 @@ let updateLives = () => {
 
 
 let sprite = PIXI.Sprite.from('sample.png');
-sprite.anchor.set(0,1)
 app.stage.addChild(sprite);
 let movement = false
 let velocity = 0;
@@ -107,6 +106,7 @@ sprite.y = 330;
 sprite.x = 280;
 let maxSpeed = 4;
 sprite.scale.set(1.5) 
+sprite.anchor.set(0.5,1)
 
 
 let trash = []
@@ -182,7 +182,7 @@ app.ticker.add((delta) => {
   trash = trash.filter(item => { 
     item.y +=(delta/50.0) * 100
     item.rotation +=(delta/50.0) *item.rotationSpeed;
-    if(item.x < sprite.x+sprite.width && item.x+item.width > sprite.x+30 &&
+    if(item.x < sprite.x+sprite.width/2 && item.x+item.width > sprite.x-sprite.width/2+30 &&
       item.y+item.height > sprite.y && item.y < sprite.y+(sprite.height/8)) {
       app.stage.removeChild(item)
       item.destroy()
@@ -227,10 +227,13 @@ app.ticker.add((delta) => {
   }
 
 
-  if(movement=='left')
+
+  if(movement=='left'){ 
     acc = -5.0;
-  else if(movement=='right')
+  }
+  else if(movement=='right'){
     acc = 5.0
+  }
   else
     if(velocity<0)
       acc = 2.0
@@ -248,9 +251,16 @@ app.ticker.add((delta) => {
         velocity = maxSpeed
   }
   
-  if(sprite.x+sprite.width-20 > 640 || sprite.x+20 < 0)
-    velocity = -velocity;
+    if(sprite.x+sprite.width/2-20 > 640 || sprite.x-sprite.width/2+20 < 0) {
+      velocity = -velocity;
+      if(sprite.x+20-sprite.width/2<0)
+        sprite.x = -20+sprite.width/2
+      else
+        sprite.x = 640 - sprite.width/2 + 20
 
+    }
+
+  sprite.rotation=(0.4*-velocity/maxSpeed)
   sprite.x+=velocity;
 });
 
