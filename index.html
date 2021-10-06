@@ -5,20 +5,21 @@
   </head>
   <body>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
       p {
         position: absolute;
         color: black;
         display: block;
         width: 100px;
         height: 30px;
-        left: 590px;
-        top: 10px;
-        font-family: monospace;
-        font-size: 20px;
+        left: 560px;
+        top: -14px;
+        font-family: 'VT323', monospace;
+        font-size: 25px;
       }
       .lower {
-        top: 40px;
-        left: 550px;
+        top: 9px;
+        left: 560px;
       }
     </style>
     <script>
@@ -37,11 +38,18 @@ paragraph.appendChild(t)
 document.body.appendChild(paragraph)
 
 let livesParagraph = document.createElement('P')
-let livest = document.createTextNode(`Lives: ${lives}`)
+let livest = document.createTextNode('')//`Lives: ${lives}`)
 
 livesParagraph.appendChild(livest)
 livesParagraph.className='lower'
 document.body.appendChild(livesParagraph)
+
+
+let floor = new PIXI.Graphics()
+floor.beginFill(0xe1bf92)
+floor.drawRect(0,310,640,360)
+floor.endFill()
+app.stage.addChild(floor)
 
 let dmg = new PIXI.Graphics()
 dmg.beginFill(0xff0000)
@@ -49,6 +57,21 @@ dmg.drawRect(0,0,640,360)
 dmg.endFill()
 dmg.alpha = 0
 app.stage.addChild(dmg)
+
+let isShaking = false;
+
+let hearts = [
+  PIXI.Sprite.from('heart.png'),
+  PIXI.Sprite.from('heart.png'),
+  PIXI.Sprite.from('heart.png')
+  ]
+
+hearts.forEach( (item, index) => {
+  item.scale.set(0.3)
+  item.y = 30
+  item.x = 610 - index*30
+  app.stage.addChild(item)
+})
 
 
 let updateScore = (points) => {
@@ -58,10 +81,13 @@ let updateScore = (points) => {
     updateInterval()
   }
 }
+
 let updateLives = () => {
   if(!gameOver) {
     lives--
-    livesParagraph.innerText = `Lives: ${lives}`
+    app.stage.removeChild(hearts[lives])
+    hearts[lives].destroy()
+    livesParagraph.innerText = ''//`Lives: ${lives}`
     if(lives == 0) {
       livesParagraph.innerText = `Defeat!`
       gameOver = true
@@ -70,6 +96,7 @@ let updateLives = () => {
   }
 }
 
+
 let sprite = PIXI.Sprite.from('sample.png');
 sprite.anchor.set(0,1)
 app.stage.addChild(sprite);
@@ -77,6 +104,7 @@ let movement = false
 let velocity = 0;
 let acc = 0;
 sprite.y = 330;
+sprite.x = 280;
 let maxSpeed = 4;
 sprite.scale.set(1.5) 
 
@@ -85,7 +113,9 @@ let trash = []
 let trashPictures = [
   'trash.png',
   'trash2.png',
-  'trash3.png'
+  'trash3.png',
+  'trash4.png',
+  'trash5.png'
 ]
 
 const spawnTrash = () => {
@@ -137,6 +167,16 @@ let elapsed = 0.0;
 app.ticker.add((delta) => {
   elapsed += delta;
 
+  if(isShaking)
+  {
+    app.stage.x = Math.random()*5-2.5;
+    app.stage.y = Math.random()*5-2.5;
+  }
+  else
+  {
+    app.stage.x = 0;
+    app.stage.y = 0;
+  }
 
 
   trash = trash.filter(item => { 
@@ -147,18 +187,34 @@ app.ticker.add((delta) => {
       app.stage.removeChild(item)
       item.destroy()
       updateScore(100)
+      if(!gameOver){
+      dmg.clear()
+      dmg.beginFill(0xa9f2d2)
+      dmg.drawRect(0,0,640,360)
+      dmg.endFill()
+      dmg.alpha = 0.6
+      }
       return false
     }
     if(item.y > 360) {
       app.stage.removeChild(item)
+      if(!gameOver){
+        isShaking = true
+        setTimeout( () => { isShaking = false }, 300)
+      }
       item.destroy()
       updateLives()
+      dmg.clear()
+      dmg.beginFill(0xff0000)
+      dmg.drawRect(0,0,640,360)
+      dmg.endFill()
       dmg.alpha = 1
       return false
     }
 
     return true
   })
+
 
 
   if(gameOver)
@@ -191,6 +247,9 @@ app.ticker.add((delta) => {
       else
         velocity = maxSpeed
   }
+  
+  if(sprite.x+sprite.width-20 > 640 || sprite.x+20 < 0)
+    velocity = -velocity;
 
   sprite.x+=velocity;
 });
